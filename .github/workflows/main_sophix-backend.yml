@@ -25,29 +25,29 @@ jobs:
           cache: npm
           cache-dependency-path: sophix-backend/package-lock.json
 
-      - name: Install ALL dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Build NestJS application
+      - name: Build NestJS app
         run: npm run build
 
-      
-      - name: Prepare production dependencies
-        run: npm ci --omit=dev
-
-      
-      - name: Prepare deployment package
+    
+      - name: Prepare deploy folder
         run: |
           mkdir deploy
           cp -r dist deploy/
-          cp -r node_modules deploy/
           cp package.json deploy/
           cp package-lock.json deploy/
+
+      - name: Install production dependencies in deploy folder
+        run: |
+          cd deploy
+          npm ci --omit=dev
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sophix-backend
+          name: app
           path: sophix-backend/deploy
 
   deploy:
@@ -58,8 +58,17 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: sophix-backend
+          name: app
 
+    
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E60E774A429C4B8DB669013F0193C8B0 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B77D8812959740DFBD8A439FD64FD4C7 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F6FF879C0B2F4D6C94E024310F2ACF32 }}
+
+    
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
