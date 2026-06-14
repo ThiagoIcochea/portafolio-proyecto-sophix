@@ -31,6 +31,7 @@ jobs:
       - name: Build NestJS application
         run: npm run build
 
+     
       - name: Prepare deployment package
         run: |
           mkdir deploy
@@ -41,22 +42,35 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app
+          name: sophix-backend
           path: sophix-backend/deploy
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: app
+          name: sophix-backend
 
+  
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E60E774A429C4B8DB669013F0193C8B0 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B77D8812959740DFBD8A439FD64FD4C7 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F6FF879C0B2F4D6C94E024310F2ACF32 }}
+
+      
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: sophix-backend
+          slot-name: Production
           package: .
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
