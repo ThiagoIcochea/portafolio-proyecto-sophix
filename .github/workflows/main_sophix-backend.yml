@@ -13,10 +13,6 @@ jobs:
     permissions:
       contents: read
 
-    defaults:
-      run:
-        working-directory: sophix-backend
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,19 +25,26 @@ jobs:
           cache-dependency-path: sophix-backend/package-lock.json
 
       - name: Install dependencies
+        working-directory: sophix-backend
         run: npm ci
 
       - name: Build NestJS application
+        working-directory: sophix-backend
         run: npm run build
+
+     
+      - name: Prepare deployment package
+        run: |
+          mkdir release
+          cp -r sophix-backend/dist release/
+          cp sophix-backend/package.json release/
+          cp sophix-backend/package-lock.json release/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: sophix-backend
-          path: |
-            sophix-backend/dist
-            sophix-backend/package.json
-            sophix-backend/package-lock.json
+          path: release/
 
   deploy:
     runs-on: ubuntu-latest
@@ -56,6 +59,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: sophix-backend
+          path: release
 
       - name: Azure Login
         uses: azure/login@v2
@@ -65,9 +69,8 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F6FF879C0B2F4D6C94E024310F2ACF32 }}
 
       - name: Deploy to Azure Web App
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: sophix-backend
           slot-name: Production
-          package: .
+          package: release
