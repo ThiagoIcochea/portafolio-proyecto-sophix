@@ -26,11 +26,14 @@ jobs:
         working-directory: sophix-backend
         run: npm run build
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend
-          path: sophix-backend
+- name: Upload artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: backend
+    path: |
+      sophix-backend/dist
+      sophix-backend/package.json
+      sophix-backend/package-lock.json
 
   deploy:
     runs-on: ubuntu-latest
