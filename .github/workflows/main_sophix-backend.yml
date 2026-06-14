@@ -10,6 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: sophix-backend
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,27 +26,23 @@ jobs:
           cache-dependency-path: sophix-backend/package-lock.json
 
       - name: Install dependencies
-        working-directory: sophix-backend
         run: npm ci
 
-      - name: Build NestJS
-        working-directory: sophix-backend
+      - name: Build NestJS app
         run: npm run build
 
-   
-      - name: Create deployment package
+      - name: Create deploy package
         run: |
-          mkdir release
-          cp -r sophix-backend/dist release/
-          cp sophix-backend/package.json release/
-          cp sophix-backend/package-lock.json release/
-          cp -r sophix-backend/node_modules release/
+          mkdir deploy
+          cp -r dist deploy/
+          cp package.json deploy/
+          cp package-lock.json deploy/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: app
-          path: release/
+          path: sophix-backend/deploy
 
   deploy:
     runs-on: ubuntu-latest
@@ -53,7 +53,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: app
-          path: release
 
       - name: Azure Login
         uses: azure/login@v2
@@ -62,8 +61,11 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B77D8812959740DFBD8A439FD64FD4C7 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F6FF879C0B2F4D6C94E024310F2ACF32 }}
 
-      - name: Deploy
+      - name: Install production dependencies
+        run: npm ci --omit=dev
+
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: sophix-backend
-          package: release
+          package: .
