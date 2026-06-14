@@ -28,10 +28,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build NestJS app
+      - name: Build NestJS application
         run: npm run build
 
-      - name: Create deploy package
+      - name: Prepare deployment package
         run: |
           mkdir deploy
           cp -r dist deploy/
@@ -54,18 +54,9 @@ jobs:
         with:
           name: app
 
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E60E774A429C4B8DB669013F0193C8B0 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B77D8812959740DFBD8A439FD64FD4C7 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F6FF879C0B2F4D6C94E024310F2ACF32 }}
-
-      - name: Install production dependencies
-        run: npm ci --omit=dev
-
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: sophix-backend
           package: .
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
