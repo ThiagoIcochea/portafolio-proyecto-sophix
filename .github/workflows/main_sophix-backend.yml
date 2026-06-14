@@ -10,26 +10,34 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+    permissions:
+      contents: read
 
-      - name: Set up Node.js
+    defaults:
+      run:
+        working-directory: sophix-backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: sophix-backend/package-lock.json
 
       - name: Install dependencies
-        working-directory: sophix-backend
-        run: npm install
+        run: npm ci
 
-      - name: Build application
-        working-directory: sophix-backend
+      - name: Build NestJS application
         run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: backend
+          name: sophix-backend
           path: |
             sophix-backend/dist
             sophix-backend/package.json
@@ -47,16 +55,17 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: backend
+          name: sophix-backend
 
-      - name: Login to Azure
+      - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5C01D14DEBF340F28B14FE45B09274AE }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_FD4E4EF9CC8047B79BF8B145B3337E97 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E023300344904B1EAD992421D8C5AAAD }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E60E774A429C4B8DB669013F0193C8B0 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B77D8812959740DFBD8A439FD64FD4C7 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F6FF879C0B2F4D6C94E024310F2ACF32 }}
 
-      - name: Deploy to Azure
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: sophix-backend
