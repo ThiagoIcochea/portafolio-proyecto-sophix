@@ -21,6 +21,8 @@ export class QdrantService implements OnModuleInit {
 
   }
 
+
+
   async onModuleInit() {
     const apiKey = await this.keyVault.getSecret('QDRANTAPIKEY');
   
@@ -82,6 +84,19 @@ export class QdrantService implements OnModuleInit {
     );
   } catch {}
 
+}
+
+async count() {
+
+  const result =
+    await this.client.count(
+      'repository_chunks',
+      {
+        exact: true,
+      },
+    );
+
+  return result.count;
 }
 
 
@@ -188,7 +203,22 @@ async searchByOwnerAndRepository(
       vector: embedding,
       limit: 10,
       score_threshold: 0.65,
-      
+      filter: {
+        must: [
+          {
+            key: 'owner',
+            match: {
+              value: owner,
+            },
+          },
+          {
+            key: 'repository',
+            match: {
+              value: repository,
+            },
+          },
+        ],
+      },
     },
   );
 

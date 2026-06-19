@@ -32,6 +32,7 @@ export class RepositoryIndexerService {
         await this.embeddingsService
           .createEmbedding(
             chunk.content,
+            'retrieval.passage',
           );
 
       await this.qdrantService
@@ -87,6 +88,7 @@ export class RepositoryIndexerService {
     const embedding =
       await this.embeddingsService.createEmbedding(
         chunk.content,
+        'retrieval.passage',
       );
 
     console.log(
@@ -106,6 +108,14 @@ export class RepositoryIndexerService {
   console.log(
     'REINDEX TERMINADO'
   );
+
+  const count =
+  await this.qdrantService.count();
+
+console.log(
+  'TOTAL POINTS:',
+  count,
+);
 
   return {
     reindexedChunks: chunks.length,

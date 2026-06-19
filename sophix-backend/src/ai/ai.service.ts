@@ -136,7 +136,7 @@ async repositoryChat(
     } as any,
   });
 
-  const embedding = await this.embeddingsService.createEmbedding(question);
+  const embedding = await this.embeddingsService.createEmbedding(question,  'retrieval.query',);
   const matches = await this.qdrantService.searchByOwnerAndRepository(
     owner,
     repository,

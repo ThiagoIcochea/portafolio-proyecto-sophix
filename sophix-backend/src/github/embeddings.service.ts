@@ -12,8 +12,12 @@ export class EmbeddingsService {
   ) {}
 
   async createEmbedding(
-    text: string,
-  ): Promise<number[]> {
+  text: string,
+  task:
+    'retrieval.passage'
+    | 'retrieval.query' =
+      'retrieval.passage',
+): Promise<number[]> {
 
     const response = await fetch(
       'https://api.jina.ai/v1/embeddings',
@@ -25,13 +29,11 @@ export class EmbeddingsService {
             'application/json',
         },
         body: JSON.stringify({
-          model:
-            'jina-embeddings-v5-text-small',
-          task:
-            'retrieval.passage',
-          normalized: true,
-          input: [text],
-        }),
+  model: 'jina-embeddings-v5-text-small',
+  task,
+  normalized: true,
+  input: [text],
+}),
       },
     );
 
