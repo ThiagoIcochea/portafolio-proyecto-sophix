@@ -7,6 +7,8 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { KeyVaultService } from 'src/key-vault/key-vault.service';
+import { KeyVaultModule } from 'src/key-vault/key-vault.module';
 
 
 @Module({
@@ -14,10 +16,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     UsersModule,
     PassportModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET') || 'sophix_secret',
+      imports: [ConfigModule, KeyVaultModule],
+      inject: [ConfigService, KeyVaultService],
+      useFactory: async  (config: ConfigService,  keyVault: KeyVaultService) => ({
+        secret:  
+      (await keyVault.getSecret('JWTSECRET')),
         signOptions: {
           expiresIn: config.get('JWT_EXPIRES_IN') || '1h',
         },

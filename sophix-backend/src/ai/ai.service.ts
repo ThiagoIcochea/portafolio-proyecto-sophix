@@ -185,10 +185,17 @@ ${payload.content?.substring(0, 500)}
   const messages = [
     {
       role: 'system' as const,
-      content: `Eres un asistente experto en análisis de código fuente llamado Sophix IA.
-Usa únicamente el contexto proporcionado.
-Si la respuesta no aparece en el contexto, dilo explícitamente.
-Contexto del repositorio:\n\n${context || 'No se encontró contexto relevante.'}`,
+      content: `Eres Sophix IA, un asistente experto en análisis de código.
+
+REGLAS ESTRICTAS:
+- Usa SOLO el contexto.
+- No inventes información.
+- Si no está en el contexto, responde: "No está en el repositorio".
+- No menciones modelos como Phi, Azure o OpenAI.
+- No asumas información externa.
+
+CONTEXTO:
+${context}`,
     },
     {
       role: 'user' as const,

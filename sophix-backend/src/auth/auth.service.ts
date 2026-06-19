@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import { UsersService } from '../users/users.service';
 import { GithubAuthDto } from './dto/github-auth.dto';
+import { KeyVaultService } from 'src/key-vault/key-vault.service';
 
 type GithubTokenResponse = {
   access_token?: string;
@@ -25,6 +26,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly keyVault: KeyVaultService
   ) {}
 
   async githubLogin(githubAuthDto: GithubAuthDto) {
@@ -80,12 +82,14 @@ private async getGithubAccessToken(
   code: string,
   codeVerifier: string,
 ){
+
+  
     const clientId = this.configService.get<string>(
       'GITHUB_CLIENT_ID',
     );
-    const clientSecret = this.configService.get<string>(
-      'GITHUB_CLIENT_SECRET',
-    );
+   
+    const clientSecret =
+      (await this.keyVault.getSecret('GITHUBCLIENTSECRET'));
 
     if (!clientId || !clientSecret) {
       throw new BadRequestException(
