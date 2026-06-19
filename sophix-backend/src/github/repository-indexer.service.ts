@@ -52,35 +52,64 @@ export class RepositoryIndexerService {
 
   }
 
-  async reindexRepositoryEmbeddings(
-    owner: string,
-    repo: string,
-  ) {
-    await this.qdrantService.createCollection();
-    await this.qdrantService.deleteByOwnerAndRepository(owner, repo);
+ async reindexRepositoryEmbeddings(
+  owner: string,
+  repo: string,
+) {
 
-    const chunks =
-      await this.githubService.getRepositoryChunks(
-        owner,
-        repo,
-      );
+  console.log('REINDEXANDO:', owner, repo);
 
-    for (const chunk of chunks) {
-      const embedding =
-        await this.embeddingsService.createEmbedding(chunk.content);
+  await this.qdrantService.createCollection();
 
-      await this.qdrantService.storeChunk(
-        chunk.owner,
-        chunk.repository,
-        chunk.path,
+  await this.qdrantService.deleteByOwnerAndRepository(
+    owner,
+    repo,
+  );
+
+  const chunks =
+    await this.githubService.getRepositoryChunks(
+      owner,
+      repo,
+    );
+
+  console.log(
+    'CHUNKS ENCONTRADOS:',
+    chunks.length,
+  );
+
+  for (const chunk of chunks) {
+
+    console.log(
+      'PROCESANDO:',
+      chunk.path,
+    );
+
+    const embedding =
+      await this.embeddingsService.createEmbedding(
         chunk.content,
-        embedding,
       );
-    }
 
-    return {
-      reindexedChunks: chunks.length,
-    };
+    console.log(
+      'EMBEDDING SIZE:',
+      embedding.length,
+    );
+
+    await this.qdrantService.storeChunk(
+      chunk.owner,
+      chunk.repository,
+      chunk.path,
+      chunk.content,
+      embedding,
+    );
   }
+
+  console.log(
+    'REINDEX TERMINADO'
+  );
+
+  return {
+    reindexedChunks: chunks.length,
+  };
+}
 
 }
