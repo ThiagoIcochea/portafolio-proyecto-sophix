@@ -21,8 +21,6 @@ export class QdrantService implements OnModuleInit {
 
   }
 
-
-
   async onModuleInit() {
     const apiKey = await this.keyVault.getSecret('QDRANTAPIKEY');
   
@@ -86,19 +84,6 @@ export class QdrantService implements OnModuleInit {
 
 }
 
-async count() {
-
-  const result =
-    await this.client.count(
-      'repository_chunks',
-      {
-        exact: true,
-      },
-    );
-
-  return result.count;
-}
-
 
 async storeChunk(
   owner: string,
@@ -107,14 +92,6 @@ async storeChunk(
   content: string,
   embedding: number[],
 ) {
-
-    console.log(
-    'GUARDANDO:',
-    owner,
-    repository,
-    path,
-  );
-
 
   await this.client.upsert(
     'repository_chunks',
@@ -169,17 +146,13 @@ async search(
   repository: string,
   embedding: number[],
 ) {
-  console.log(
-  'QUESTION EMBEDDING SIZE:',
-  embedding.length,
-);
 
   return this.client.search(
     'repository_chunks',
     {
       vector: embedding,
       limit: 10,
-      
+      score_threshold: 0.65,
       filter: {
         must: [
           {
@@ -206,38 +179,7 @@ async searchByOwnerAndRepository(
     {
       vector: embedding,
       limit: 10,
-      filter: {
-        must: [
-          {
-            key: 'owner',
-            match: {
-              value: owner,
-            },
-          },
-          {
-            key: 'repository',
-            match: {
-              value: repository,
-            },
-          },
-        ],
-      },
-    },
-  );
-
-}
-
-
-async debugRepository(
-  owner: string,
-  repository: string,
-) {
-
-  return this.client.scroll(
-    'repository_chunks',
-    {
-      limit: 20,
-      with_payload: true,
+      score_threshold: 0.65,
       filter: {
         must: [
           {

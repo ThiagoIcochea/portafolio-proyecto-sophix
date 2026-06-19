@@ -32,7 +32,7 @@ export class RepositoryIndexerService {
         await this.embeddingsService
           .createEmbedding(
             chunk.content,
-            'retrieval.passage',
+            'retrieval.passage'
           );
 
       await this.qdrantService
@@ -109,28 +109,6 @@ export class RepositoryIndexerService {
     'REINDEX TERMINADO'
   );
 
-  const count =
-  await this.qdrantService.count();
-
-console.log(
-  'TOTAL POINTS:',
-  count,
-);
-
-const debug =
-  await this.qdrantService.debugRepository(
-    'ThiagoIcochea',
-    'BackendProyectoDF',
-  );
-
-console.log(
-  'DEBUG:',
-  JSON.stringify(
-    debug,
-    null,
-    2,
-  ),
-);
   return {
     reindexedChunks: chunks.length,
   };
