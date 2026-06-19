@@ -147,12 +147,17 @@ async search(
   embedding: number[],
 ) {
 
+  console.log(
+  'QUESTION EMBEDDING SIZE:',
+  embedding.length,
+);
+
   return this.client.search(
     'repository_chunks',
     {
       vector: embedding,
       limit: 10,
-      score_threshold: 0.65,
+     
       filter: {
         must: [
           {
@@ -168,6 +173,35 @@ async search(
 
 }
 
+async debugRepository(
+  owner: string,
+  repository: string,
+) {
+  return this.client.scroll(
+    'repository_chunks',
+    {
+      limit: 20,
+      with_payload: true,
+      filter: {
+        must: [
+          {
+            key: 'owner',
+            match: {
+              value: owner,
+            },
+          },
+          {
+            key: 'repository',
+            match: {
+              value: repository,
+            },
+          },
+        ],
+      },
+    },
+  );
+}
+
 async searchByOwnerAndRepository(
   owner: string,
   repository: string,
@@ -179,7 +213,7 @@ async searchByOwnerAndRepository(
     {
       vector: embedding,
       limit: 10,
-      score_threshold: 0.65,
+     
       filter: {
         must: [
           {

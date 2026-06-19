@@ -105,9 +105,25 @@ export class RepositoryIndexerService {
     );
   }
 
+ 
   console.log(
     'REINDEX TERMINADO'
   );
+
+  const debug =
+  await this.qdrantService.debugRepository(
+    owner,
+    repo,
+  );
+
+console.log(
+  'DEBUG:',
+  JSON.stringify(
+    debug,
+    null,
+    2,
+  ),
+);
 
   return {
     reindexedChunks: chunks.length,
