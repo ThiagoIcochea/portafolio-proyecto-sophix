@@ -93,6 +93,14 @@ async storeChunk(
   embedding: number[],
 ) {
 
+    console.log(
+    'GUARDANDO:',
+    owner,
+    repository,
+    path,
+  );
+
+
   await this.client.upsert(
     'repository_chunks',
     {

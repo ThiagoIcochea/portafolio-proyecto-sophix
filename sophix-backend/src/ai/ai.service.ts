@@ -143,6 +143,20 @@ async repositoryChat(
     embedding,
   );
 
+  console.log(
+  'MATCHES:',
+  matches.length,
+);
+
+console.log(
+  'MATCHES DATA:',
+  JSON.stringify(
+    matches.slice(0, 2),
+    null,
+    2,
+  ),
+);
+
   console.log('OWNER:', owner);
 console.log('REPOSITORY:', repository);
 console.log('MATCHES:', matches.length);
