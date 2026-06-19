@@ -15,6 +15,7 @@ import { KeyVaultModule } from 'src/key-vault/key-vault.module';
   imports: [
     UsersModule,
     PassportModule,
+    KeyVaultModule,
     JwtModule.registerAsync({
       imports: [ConfigModule, KeyVaultModule],
       inject: [ConfigService, KeyVaultService],
@@ -29,6 +30,6 @@ import { KeyVaultModule } from 'src/key-vault/key-vault.module';
   ],
   controllers: [AuthController],
   providers: [AuthService,
-  JwtStrategy,],
+  JwtStrategy],
 })
 export class AuthModule {}
