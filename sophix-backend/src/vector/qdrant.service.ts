@@ -188,22 +188,7 @@ async searchByOwnerAndRepository(
       vector: embedding,
       limit: 10,
       score_threshold: 0.65,
-      filter: {
-        must: [
-          {
-            key: 'owner',
-            match: {
-              value: owner,
-            },
-          },
-          {
-            key: 'repository',
-            match: {
-              value: repository,
-            },
-          },
-        ],
-      },
+      
     },
   );
 
