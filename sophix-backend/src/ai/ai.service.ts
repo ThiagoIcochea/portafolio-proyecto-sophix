@@ -4,6 +4,7 @@ import { MessagesService } from '../messages/messages.service';
 import { GithubService } from '../github/github.service';
 import { EmbeddingsService } from '../github/embeddings.service';
 import { QdrantService } from '../vector/qdrant.service';
+import { join } from 'path/win32';
 
 type RepositoryReference = {
   owner: string;
@@ -25,11 +26,14 @@ async generateResponse(
   conversationId: string,
   githubUsername?: string,
 ) {
+  
   const history = await this.messagesService.findByConversation(conversationId);
   const lastUserMessage =
     [...history]
       .reverse()
       .find((message) => message.role === 'user');
+
+  
 
   let repositoryContext: string | null = null;
 
@@ -41,22 +45,47 @@ async generateResponse(
         repositoryContext = await this.githubService.getUserRepositoriesContext(githubUsername);
       }
     } else if (repositoryReference) {
-      repositoryContext = await this.githubService.getRepositoryContext(
+
+        const embedding = await this.embeddingsService.createEmbedding(
+      lastUserMessage.content,
+      'retrieval.query',
+    );
+
+    const matches =
+      await this.qdrantService.searchByOwnerAndRepository(
         repositoryReference.owner,
         repositoryReference.repo,
+        embedding,
       );
-    }
+
+    repositoryContext = matches
+      .slice(0, 3)
+      .map((m) => {
+        const p = m.payload as any;
+
+        return `
+FILE: ${p.path}
+CODE:
+${p.content?.slice(0, 3000)}
+`;
+      })
+      .join('\n\n---\n\n');
+  }
+
+    
   }
 
   const systemPrompt = `
 Eres un asistente experto  en análisis de código fuente y arquitectura de software, llamado Sophix
 
-Reglas:
-- Responde usando únicamente el contexto proporcionado.
-- Si la información no aparece en el contexto, indícalo de forma explícita.
-- Si no hay contexto suficiente, explica que necesitas el repositorio, el archivo o más detalle.
-- Menciona archivos relevantes cuando sea posible.
-- Explica el flujo del código paso a paso.
+REGLAS ABSOLUTAS:
+- No inventes información.
+- No uses conocimiento externo.
+- No digas nombres de modelos o empresas.
+- No respondas si no está en el contexto.
+
+Si falta información:
+→ responde EXACTAMENTE: "No está en el repositorio"
 
 Contexto:
 ${repositoryContext ?? 'Sin contexto disponible. No tengo suficiente información para responder con precisión. Solicita el repositorio, el archivo o una pregunta más específica.'}
@@ -168,16 +197,13 @@ if (matches.length > 0) {
 }
 const context = matches
   .slice(0, 2)
-  .map((match) => {
-    const payload = match.payload as {
-      path?: string;
-      content?: string;
-    };
+  .map((m) => {
+    const p = m.payload as any;
 
     return `
-Archivo: ${payload.path}
-
-${payload.content?.substring(0, 500)}
+FILE: ${p.path}
+CODE:
+${(p.content ?? '').slice(0, 2000)}
 `;
   })
   .join('\n\n---\n\n');
