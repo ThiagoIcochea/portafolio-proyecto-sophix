@@ -28,10 +28,13 @@ export class AuthService {
   ) {}
 
   async githubLogin(githubAuthDto: GithubAuthDto) {
+    
     const accessToken = await this.getGithubAccessToken(
       githubAuthDto.code,
+      githubAuthDto.codeVerifier
     );
-
+   console.log('ENTRO A githubLogin');
+  console.log(githubAuthDto);
     const githubUser = await this.getGithubUser(
       accessToken,
     );
@@ -73,7 +76,10 @@ export class AuthService {
     };
   }
 
-  private async getGithubAccessToken(code: string) {
+private async getGithubAccessToken(
+  code: string,
+  codeVerifier: string,
+){
     const clientId = this.configService.get<string>(
       'GITHUB_CLIENT_ID',
     );
@@ -87,6 +93,13 @@ export class AuthService {
       );
     }
 
+
+    console.log('CANJEANDO CODE');
+console.log({
+  code,
+  codeVerifier,
+});
+
     const response = await fetch(
       'https://github.com/login/oauth/access_token',
       {
@@ -95,17 +108,19 @@ export class AuthService {
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          client_id: clientId,
-          client_secret: clientSecret,
-          code,
-        }),
+       body: JSON.stringify({
+  client_id: clientId,
+  client_secret: clientSecret,
+  code,
+  code_verifier: codeVerifier,
+}),
       },
     );
 
     const data =
       await response.json() as GithubTokenResponse;
-
+    console.log('RESPUESTA GITHUB');
+    console.log(data);
     if (!response.ok || !data.access_token) {
       throw new BadRequestException(
         data.error_description ??

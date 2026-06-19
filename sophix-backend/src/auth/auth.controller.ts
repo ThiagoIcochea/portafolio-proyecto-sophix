@@ -22,6 +22,9 @@ export class AuthController {
 githubLogin(
   @Body() githubAuthDto: GithubAuthDto
 ) {
+  console.log('BODY RECIBIDO');
+  console.log(githubAuthDto);
+
   return this.authService.githubLogin(
     githubAuthDto
   );
