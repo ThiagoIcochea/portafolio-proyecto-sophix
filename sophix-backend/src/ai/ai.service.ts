@@ -166,16 +166,21 @@ if (matches.length > 0) {
     JSON.stringify(matches[0], null, 2)
   );
 }
-  const context = matches
-    .map((match) => {
-      const payload = match.payload as {
-        path?: string;
-        content?: string;
-      };
+const context = matches
+  .slice(0, 2)
+  .map((match) => {
+    const payload = match.payload as {
+      path?: string;
+      content?: string;
+    };
 
-      return `Archivo: ${payload.path}\n\n${payload.content}`;
-    })
-    .join('\n\n---\n\n');
+    return `
+Archivo: ${payload.path}
+
+${payload.content?.substring(0, 500)}
+`;
+  })
+  .join('\n\n---\n\n');
 
   const messages = [
     {
@@ -190,6 +195,11 @@ Contexto del repositorio:\n\n${context || 'No se encontró contexto relevante.'}
       content: question,
     },
   ];
+
+  console.log(
+  'CONTEXT SIZE:',
+  context.length,
+);
 
   const response = await this.foundryProvider.generateResponse(messages);
 
