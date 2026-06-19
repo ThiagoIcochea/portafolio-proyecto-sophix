@@ -201,6 +201,16 @@ Contexto del repositorio:\n\n${context || 'No se encontró contexto relevante.'}
   context.length,
 );
 
+
+console.log(
+  'PROMPT:',
+  JSON.stringify(
+    messages,
+    null,
+    2,
+  ),
+);
+
   const response = await this.foundryProvider.generateResponse(messages);
 
   await this.messagesService.create({
