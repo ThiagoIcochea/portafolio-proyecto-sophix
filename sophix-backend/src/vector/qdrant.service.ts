@@ -47,19 +47,40 @@ export class QdrantService implements OnModuleInit {
         'repository_chunks',
     );
 
-  if (exists) {
-    return;
+  if (!exists) {
+
+    await this.client.createCollection(
+      'repository_chunks',
+      {
+        vectors: {
+          size: 1024,
+          distance: 'Cosine',
+        },
+      },
+    );
+
   }
 
-  await this.client.createCollection(
-    'repository_chunks',
-    {
-      vectors: {
-        size: 1024,
-        distance: 'Cosine',
+ 
+  try {
+    await this.client.createPayloadIndex(
+      'repository_chunks',
+      {
+        field_name: 'owner',
+        field_schema: 'keyword',
       },
-    },
-  );
+    );
+  } catch {}
+
+  try {
+    await this.client.createPayloadIndex(
+      'repository_chunks',
+      {
+        field_name: 'repository',
+        field_schema: 'keyword',
+      },
+    );
+  } catch {}
 
 }
 
