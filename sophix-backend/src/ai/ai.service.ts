@@ -143,6 +143,15 @@ async repositoryChat(
     embedding,
   );
 
+  console.log('OWNER:', owner);
+console.log('REPOSITORY:', repository);
+console.log('MATCHES:', matches.length);
+
+if (matches.length > 0) {
+  console.log(
+    JSON.stringify(matches[0], null, 2)
+  );
+}
   const context = matches
     .map((match) => {
       const payload = match.payload as {
