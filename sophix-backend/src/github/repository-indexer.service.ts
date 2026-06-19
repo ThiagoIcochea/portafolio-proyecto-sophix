@@ -117,6 +117,20 @@ console.log(
   count,
 );
 
+const debug =
+  await this.qdrantService.debugRepository(
+    'ThiagoIcochea',
+    'BackendProyectoDF',
+  );
+
+console.log(
+  'DEBUG:',
+  JSON.stringify(
+    debug,
+    null,
+    2,
+  ),
+);
   return {
     reindexedChunks: chunks.length,
   };
