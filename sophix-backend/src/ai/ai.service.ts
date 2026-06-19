@@ -185,7 +185,7 @@ ${payload.content?.substring(0, 500)}
   const messages = [
     {
       role: 'system' as const,
-      content: `Eres un asistente experto en análisis de código fuente.
+      content: `Eres un asistente experto en análisis de código fuente llamado Sophix IA.
 Usa únicamente el contexto proporcionado.
 Si la respuesta no aparece en el contexto, dilo explícitamente.
 Contexto del repositorio:\n\n${context || 'No se encontró contexto relevante.'}`,
