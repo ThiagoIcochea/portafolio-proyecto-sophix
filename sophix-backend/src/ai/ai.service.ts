@@ -547,77 +547,136 @@ console.log(
 }
 
 async generateDirectResponse(
-  message: string,
+  owner: string,
+  repository: string,
+  question: string,
   githubUsername?: string,
 ) {
-  let repositoryContext: string | null = null;
+  
+  const embedding =
+    await this.embeddingsService.createEmbedding(
+      question,
+      'retrieval.query',
+    );
 
-  const repositoryReference =
-    this.extractRepositoryReference(message);
+  
+  const matches =
+    await this.qdrantService.searchByOwnerAndRepository(
+      owner,
+      repository,
+      embedding,
+    );
 
-  if (this.isAllRepositoriesRequest(message)) {
+  
+  let importantFiles: any[] = [];
 
-    if (githubUsername) {
-      repositoryContext =
-        await this.githubService.getUserRepositoriesContext(
-          githubUsername,
-        );
-    }
+  if (this.isArchitectureQuestion(question)) {
+    importantFiles =
+      await this.qdrantService.getImportantFiles(
+        owner,
+        repository,
+      );
+  }
 
-  } else if (
-    githubUsername &&
-    this.isRepositoryKnowledgeQuestion(message)
-  ) {
+ 
+  const allMatches = [
+    ...importantFiles,
+    ...matches,
+  ];
 
-    const embedding =
-      await this.embeddingsService.createEmbedding(
-        message,
-        'retrieval.query',
+ 
+  const uniqueMatches = allMatches.filter(
+    (match, index, self) =>
+      index ===
+      self.findIndex(
+        (m) =>
+          (m.payload as any)?.path ===
+          (match.payload as any)?.path,
+      ),
+  );
+
+ 
+  const priorityFiles = [
+    'readme.md',
+    'package.json',
+    'app.module.ts',
+    'main.ts',
+  ];
+
+  uniqueMatches.sort((a, b) => {
+    const pathA =
+      ((a.payload as any)?.path ?? '')
+        .toLowerCase();
+
+    const pathB =
+      ((b.payload as any)?.path ?? '')
+        .toLowerCase();
+
+    const aPriority =
+      priorityFiles.some((p) =>
+        pathA.includes(p),
       );
 
-    const matches =
-      await this.qdrantService.searchByOwner(
-        githubUsername,
-        embedding,
+    const bPriority =
+      priorityFiles.some((p) =>
+        pathB.includes(p),
       );
 
-    repositoryContext = matches
-      .slice(0, 10)
-      .map((m) => {
-        const p = m.payload as any;
+    if (aPriority && !bPriority) return -1;
+    if (!aPriority && bPriority) return 1;
 
-        return `
-REPOSITORY: ${p.repository}
+    return (b.score ?? 0) - (a.score ?? 0);
+  });
+
+
+  const context = uniqueMatches
+    .slice(0, 8)
+    .map((m) => {
+      const p = m.payload as any;
+
+      return `
 FILE: ${p.path}
-
 CODE:
 ${(p.content ?? '').slice(0, 2000)}
 `;
-      })
-      .join('\n\n---\n\n');
-  }
+    })
+    .join('\n\n---\n\n');
 
+  
   const systemPrompt = `
-Eres Sophix IA, un asistente especializado en análisis de código fuente y repositorios.
+Eres Sophix IA, un asistente especializado en análisis de código fuente, arquitectura de software y repositorios.
 
-CONTEXTO:
-${repositoryContext ?? 'Sin contexto disponible.'}
+OBJETIVO:
+Ayudar al usuario a comprender el repositorio específico que está consultando.
+
+REGLAS:
+- Usa únicamente el contexto del repositorio proporcionado.
+- No inventes archivos o código.
+- Si no hay información suficiente, indícalo claramente.
+- Explica arquitectura, flujo, estructura y comportamiento cuando sea posible.
+- Distingue entre inferencia y evidencia real del código.
+
+CONTEXTO DEL REPOSITORIO:
+${context || 'Sin contexto disponible.'}
 `;
 
+ 
   const messages = [
     {
-      role: 'system',
+      role: 'system' as const,
       content: systemPrompt,
     },
     {
-      role: 'user',
-      content: message,
+      role: 'user' as const,
+      content: question,
     },
   ];
 
-  return await this.foundryProvider.generateResponse(
-    messages,
-  );
+ 
+  console.log('PROMPT SIZE:', JSON.stringify(messages).length);
+  console.log('CONTEXT SIZE:', context.length);
+
+  return await this.foundryProvider.generateResponse(messages);
 }
 
 }

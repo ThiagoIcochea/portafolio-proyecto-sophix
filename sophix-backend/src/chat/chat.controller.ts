@@ -32,14 +32,21 @@ export class ChatController {
     );
   }
 
-    @Post('ask')
-  ask(
-    @Body() dto: { message: string },
-    @CurrentUser() user: CurrentGithubUser,
-  ) {
-    return this.chatService.ask(
-      dto.message,
-      user.githubUsername,
-    );
-  }
+   @Post('ask')
+ask(
+  @Body()
+  dto: {
+    owner: string;
+    repository: string;
+    question: string;
+  },
+  @CurrentUser() user: CurrentGithubUser,
+) {
+  return this.chatService.ask(
+    dto.owner,
+    dto.repository,
+    dto.question,
+    user.githubUsername,
+  );
+}
 }

@@ -46,12 +46,16 @@ export class ChatService {
     };
   }
 
-  async ask(
-  message: string,
+ async ask(
+  owner: string,
+  repository: string,
+  question: string,
   githubUsername?: string,
 ) {
   return this.aiService.generateDirectResponse(
-    message,
+    owner,
+    repository,
+    question,
     githubUsername,
   );
 }
