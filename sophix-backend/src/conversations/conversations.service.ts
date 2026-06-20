@@ -16,6 +16,7 @@ export class ConversationsService {
  async create(
   title: string,
   userId: string,
+  model: string
 ) {
 
   const conversation =
@@ -24,6 +25,7 @@ export class ConversationsService {
       user: {
         id: userId,
       } as any,
+      model,
     });
 
   return this.repository.save(
