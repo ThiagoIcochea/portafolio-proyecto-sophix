@@ -11,13 +11,14 @@ export class EmbeddingsService {
       private readonly keyVault: KeyVaultService,
   ) {}
 
-  async createEmbedding(
-    text: string,
-    task:
-      | 'retrieval.passage'
-      | 'retrieval.query' =
-        'retrieval.passage',
-  ): Promise<number[]> {
+ async createEmbedding(
+  text: string,
+  task:
+    | 'retrieval.passage'
+    | 'retrieval.query' =
+      'retrieval.passage',
+  retry = 0,
+): Promise<number[]>{
 
     if (!text?.trim()) {
       throw new Error(
@@ -30,10 +31,18 @@ export class EmbeddingsService {
         'JINAAPIKEY',
       );
 
+    const controller = new AbortController();
+
+setTimeout(
+  () => controller.abort(),
+  30000,
+);
+
     const response = await fetch(
       'https://api.jina.ai/v1/embeddings',
       {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
@@ -47,7 +56,35 @@ export class EmbeddingsService {
       },
     );
 
-    const data = await response.json();
+    
+   if (response.status === 429) {
+
+  if (retry >= 3) {
+    throw new Error(
+      'Jina rate limit excedido después de varios reintentos',
+    );
+  }
+
+  const waitTime =
+    (retry + 1) * 60000;
+
+  console.log(
+    `RATE LIMIT. ESPERANDO ${waitTime / 1000}s`,
+  );
+
+  await new Promise(
+    resolve => setTimeout(resolve, waitTime),
+  );
+
+  return this.createEmbedding(
+    text,
+    task,
+    retry + 1,
+  );
+}
+
+const data = await response.json();
+
 
     if (!response.ok) {
 
