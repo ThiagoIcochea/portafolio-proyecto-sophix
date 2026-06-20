@@ -43,8 +43,8 @@ create(
 
   return this.service.create(
     body.title,
-    body.model,
     user.id,
+    body.model,
   );
 }
 }
