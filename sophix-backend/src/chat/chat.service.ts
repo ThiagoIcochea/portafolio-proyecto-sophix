@@ -52,12 +52,13 @@ export class ChatService {
   question: string,
   githubUsername?: string,
 ) {
-  return this.aiService.generateDirectResponse(
+  const response = await  this.aiService.generateDirectResponse(
     owner,
     repository,
     question,
     githubUsername,
   );
+  return { response };
 }
   
 }
