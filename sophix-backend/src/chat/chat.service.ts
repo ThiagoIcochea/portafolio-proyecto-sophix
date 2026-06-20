@@ -46,5 +46,14 @@ export class ChatService {
     };
   }
 
+  async ask(
+  message: string,
+  githubUsername?: string,
+) {
+  return this.aiService.generateDirectResponse(
+    message,
+    githubUsername,
+  );
+}
   
 }

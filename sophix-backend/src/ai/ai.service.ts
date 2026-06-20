@@ -546,4 +546,78 @@ console.log(
   return response;
 }
 
+async generateDirectResponse(
+  message: string,
+  githubUsername?: string,
+) {
+  let repositoryContext: string | null = null;
+
+  const repositoryReference =
+    this.extractRepositoryReference(message);
+
+  if (this.isAllRepositoriesRequest(message)) {
+
+    if (githubUsername) {
+      repositoryContext =
+        await this.githubService.getUserRepositoriesContext(
+          githubUsername,
+        );
+    }
+
+  } else if (
+    githubUsername &&
+    this.isRepositoryKnowledgeQuestion(message)
+  ) {
+
+    const embedding =
+      await this.embeddingsService.createEmbedding(
+        message,
+        'retrieval.query',
+      );
+
+    const matches =
+      await this.qdrantService.searchByOwner(
+        githubUsername,
+        embedding,
+      );
+
+    repositoryContext = matches
+      .slice(0, 10)
+      .map((m) => {
+        const p = m.payload as any;
+
+        return `
+REPOSITORY: ${p.repository}
+FILE: ${p.path}
+
+CODE:
+${(p.content ?? '').slice(0, 2000)}
+`;
+      })
+      .join('\n\n---\n\n');
+  }
+
+  const systemPrompt = `
+Eres Sophix IA, un asistente especializado en análisis de código fuente y repositorios.
+
+CONTEXTO:
+${repositoryContext ?? 'Sin contexto disponible.'}
+`;
+
+  const messages = [
+    {
+      role: 'system',
+      content: systemPrompt,
+    },
+    {
+      role: 'user',
+      content: message,
+    },
+  ];
+
+  return await this.foundryProvider.generateResponse(
+    messages,
+  );
+}
+
 }
