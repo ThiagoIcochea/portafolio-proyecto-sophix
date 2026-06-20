@@ -14,44 +14,72 @@ export class RepositoryIndexerService {
   ) {}
 
   async indexRepositoryEmbeddings(
-    owner: string,
-    repo: string,
-  ) {
+  owner: string,
+  repo: string,
+) {
 
-    await this.qdrantService.createCollection();
+  await this.qdrantService.createCollection();
 
-    const chunks =
-      await this.githubService.getRepositoryChunks(
-        owner,
-        repo,
+  const chunks =
+    await this.githubService.getRepositoryChunks(
+      owner,
+      repo,
+    );
+
+  for (const chunk of chunks) {
+
+    try {
+
+      console.log(
+        'PROCESANDO:',
+        chunk.path,
       );
 
-    for (const chunk of chunks) {
+      if (!chunk.content?.trim()) {
 
-      const embedding =
-        await this.embeddingsService
-          .createEmbedding(
-            chunk.content,
-            'retrieval.passage'
-          );
-
-      await this.qdrantService
-        .storeChunk(
-          chunk.owner,
-          chunk.repository,
+        console.log(
+          'ARCHIVO VACIO:',
           chunk.path,
-          chunk.content,
-          embedding,
         );
 
+        continue;
+      }
+
+      const embedding =
+        await this.embeddingsService.createEmbedding(
+          chunk.content,
+          'retrieval.passage',
+        );
+
+      console.log(
+        'EMBEDDING SIZE:',
+        embedding.length,
+      );
+
+      await this.qdrantService.storeChunk(
+        chunk.owner,
+        chunk.repository,
+        chunk.path,
+        chunk.content,
+        embedding,
+      );
+
+    } catch (error) {
+
+      console.error(
+        'ERROR EN ARCHIVO:',
+        chunk.path,
+        error,
+      );
+
+      continue;
     }
-
-    return {
-      indexedChunks:
-        chunks.length,
-    };
-
   }
+
+  return {
+    indexedChunks: chunks.length,
+  };
+}
 
  async reindexRepositoryEmbeddings(
   owner: string,
@@ -78,12 +106,25 @@ export class RepositoryIndexerService {
     chunks.length,
   );
 
+
   for (const chunk of chunks) {
+
+  try {
 
     console.log(
       'PROCESANDO:',
       chunk.path,
     );
+
+    if (!chunk.content?.trim()) {
+
+      console.log(
+        'ARCHIVO VACIO:',
+        chunk.path,
+      );
+
+      continue;
+    }
 
     const embedding =
       await this.embeddingsService.createEmbedding(
@@ -103,7 +144,18 @@ export class RepositoryIndexerService {
       chunk.content,
       embedding,
     );
+
+  } catch (error) {
+
+    console.error(
+      'ERROR EN ARCHIVO:',
+      chunk.path,
+      error,
+    );
+
+    continue;
   }
+}
 
  
   console.log(
