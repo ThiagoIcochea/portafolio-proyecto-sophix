@@ -5,6 +5,8 @@ import { GithubService } from '../github/github.service';
 import { EmbeddingsService } from '../github/embeddings.service';
 import { QdrantService } from '../vector/qdrant.service';
 import { join } from 'path/win32';
+import { GroqProvider } from './providers/GroqProvider';
+import { ConversationsService } from 'src/conversations/conversations.service';
 
 type RepositoryReference = {
   owner: string;
@@ -16,10 +18,12 @@ export class AiService {
 
   constructor(
     private readonly foundryProvider: FoundryProvider,
+    private readonly groqProvider: GroqProvider,
     private readonly messagesService: MessagesService,
     private readonly githubService: GithubService,
     private readonly embeddingsService: EmbeddingsService,
     private readonly qdrantService: QdrantService,
+     private readonly conversationsService: ConversationsService,
   ) {}
 
 async generateResponse(
@@ -28,25 +32,33 @@ async generateResponse(
 ) {
   
   const history = await this.messagesService.findByConversation(conversationId);
+
   const lastUserMessage =
-    [...history]
-      .reverse()
-      .find((message) => message.role === 'user');
+    [...history].reverse().find((message) => message.role === 'user');
+
+  if (!lastUserMessage) {
+    return 'No hay mensaje del usuario.';
+  }
 
   
+const conversation =
+  await this.conversationsService.findOne(conversationId);
+  
+  const model = conversation?.model ?? 'foundry';
 
+  
   let repositoryContext: string | null = null;
 
-  if (lastUserMessage) {
-    const repositoryReference = this.extractRepositoryReference(lastUserMessage.content);
+  const repositoryReference =
+    this.extractRepositoryReference(lastUserMessage.content);
 
-    if (this.isAllRepositoriesRequest(lastUserMessage.content)) {
-      if (githubUsername) {
-        repositoryContext = await this.githubService.getUserRepositoriesContext(githubUsername);
-      }
-    } else if (repositoryReference) {
-
-        const embedding = await this.embeddingsService.createEmbedding(
+  if (this.isAllRepositoriesRequest(lastUserMessage.content)) {
+    if (githubUsername) {
+      repositoryContext =
+        await this.githubService.getUserRepositoriesContext(githubUsername);
+    }
+  } else if (repositoryReference) {
+    const embedding = await this.embeddingsService.createEmbedding(
       lastUserMessage.content,
       'retrieval.query',
     );
@@ -72,41 +84,40 @@ ${p.content?.slice(0, 3000)}
       .join('\n\n---\n\n');
   }
 
-    
-  }
-
-const systemPrompt = `
+ 
+  const systemPrompt = `
 Eres Sophix IA, un asistente experto en análisis de código y comprensión de repositorios.
 
 REGLAS:
 - Usa el contexto del repositorio como fuente principal.
-- Si la información está parcialmente disponible, intenta razonar con lo que hay.
-- No inventes funciones, archivos o código que no aparezca en el contexto.
-- Si la respuesta no puede derivarse del contexto, responde: "No encontré suficiente información en el repositorio".
-- No menciones modelos, empresas ni herramientas externas.
-- No des información fuera del repositorio, excepto cuando el usuario pregunte cosas generales como "qué eres".
-
-IMPORTANTE:
-- Si el usuario pregunta por identidad del sistema (qué eres / quién eres), responde siempre:
-  "Soy Sophix IA, un asistente de análisis de código fuente."
+- No inventes código o archivos.
+- Si no hay información suficiente, responde: "No encontré suficiente información en el repositorio".
+- No menciones herramientas externas.
 
 CONTEXTO:
-${repositoryContext ?? "Sin contexto disponible."}
+${repositoryContext ?? 'Sin contexto disponible.'}
 `;
 
+  
   const messages = [
     {
       role: 'system',
       content: systemPrompt,
     },
-
-    ...history.map(m => ({
+    ...history.map((m) => ({
       role: m.role,
       content: m.content,
     })),
   ];
 
-  return this.foundryProvider.generateResponse(messages);
+
+  const provider =
+    model === 'groq'
+      ? this.groqProvider
+      : this.foundryProvider;
+
+  
+  return await provider.generateResponse(messages);
 }
 
 

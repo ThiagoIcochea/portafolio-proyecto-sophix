@@ -37,6 +37,12 @@ export class ConversationsService {
     });
   }
 
+  findOne(conversationId: string) {
+  return this.repository.findOne({
+    where: { id: conversationId },
+  });
+}
+
   findByUser(userId: string) {
 
   return this.repository.find({
