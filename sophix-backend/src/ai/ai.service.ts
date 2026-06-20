@@ -26,6 +26,15 @@ export class AiService {
      private readonly conversationsService: ConversationsService,
   ) {}
 
+private isArchitectureQuestion(
+  question: string,
+): boolean {
+
+  return /arquitectura|estructura|organizacion|organización|modulos|módulos|flujo|stack|tecnologias|tecnologías|proyecto|repositorio/i
+    .test(question);
+
+}
+
 async generateResponse(
   conversationId: string,
   githubUsername?: string,
@@ -71,15 +80,85 @@ const conversation =
         embedding,
       );
 
-    repositoryContext = matches
-      .slice(0, 3)
+      let importantFiles: any[] = [];
+
+if (
+  this.isArchitectureQuestion(
+    lastUserMessage.content,
+  )
+) {
+  importantFiles =
+    await this.qdrantService.getImportantFiles(
+      repositoryReference.owner,
+      repositoryReference.repo,
+    );
+}
+
+   const allMatches = [
+  ...importantFiles,
+  ...matches,
+];
+
+const uniqueMatches = allMatches.filter(
+  (match, index, self) =>
+    index ===
+    self.findIndex(
+      (m) =>
+        (m.payload as any)?.path ===
+        (match.payload as any)?.path,
+    ),
+);
+
+const priorityFiles = [
+  'readme.md',
+  'package.json',
+  'app.module.ts',
+  'main.ts',
+];
+
+
+uniqueMatches.sort((a, b) => {
+
+  const pathA =
+    ((a.payload as any)?.path ?? '')
+      .toLowerCase();
+
+  const pathB =
+    ((b.payload as any)?.path ?? '')
+      .toLowerCase();
+
+  const aPriority =
+    priorityFiles.some(
+      p => pathA.includes(p),
+    );
+
+  const bPriority =
+    priorityFiles.some(
+      p => pathB.includes(p),
+    );
+
+  if (aPriority && !bPriority)
+    return -1;
+
+  if (!aPriority && bPriority)
+    return 1;
+
+  return (b.score ?? 0) -
+         (a.score ?? 0);
+
+});
+
+
+
+    repositoryContext =uniqueMatches
+      .slice(0, 8)
       .map((m) => {
         const p = m.payload as any;
 
         return `
 FILE: ${p.path}
 CODE:
-${p.content?.slice(0, 3000)}
+${p.content?.slice(0, 2000)}
 `;
       })
       .join('\n\n---\n\n');
@@ -142,13 +221,13 @@ CONTEXTO:
 ${repositoryContext ?? 'Sin contexto disponible.'}
 `;
 
-  
+  const recentHistory = history.slice(-10);
   const messages = [
     {
       role: 'system',
       content: systemPrompt,
     },
-    ...history.map((m) => ({
+    ...recentHistory.map((m) => ({
       role: m.role,
       content: m.content,
     })),
@@ -160,7 +239,11 @@ ${repositoryContext ?? 'Sin contexto disponible.'}
       ? this.groqProvider
       : this.foundryProvider;
 
-  
+  const promptSize = JSON.stringify(messages).length;
+
+console.log('PROMPT SIZE:', promptSize);
+console.log('HISTORY SIZE:', recentHistory.length);
+console.log('REPOSITORY CONTEXT SIZE:', repositoryContext?.length ?? 0);
   return await provider.generateResponse(messages);
 }
 
@@ -230,15 +313,40 @@ async repositoryChat(
     embedding,
   );
 
+  let importantFiles: any[] = [];
+
+if (this.isArchitectureQuestion(question)) {
+  importantFiles =
+    await this.qdrantService.getImportantFiles(
+      owner,
+      repository,
+    );
+}
+
+const allMatches = [
+  ...importantFiles,
+  ...matches,
+];
+
+const uniqueMatches = allMatches.filter(
+  (match, index, self) =>
+    index ===
+    self.findIndex(
+      (m) =>
+        (m.payload as any)?.path ===
+        (match.payload as any)?.path,
+    ),
+);
+
   console.log(
   'MATCHES:',
-  matches.length,
+  uniqueMatches.length,
 );
 
 console.log(
   'MATCHES DATA:',
   JSON.stringify(
-    matches.slice(0, 2),
+    uniqueMatches.slice(0, 8),
     null,
     2,
   ),
@@ -246,15 +354,53 @@ console.log(
 
   console.log('OWNER:', owner);
 console.log('REPOSITORY:', repository);
-console.log('MATCHES:', matches.length);
+console.log('MATCHES:', uniqueMatches.length);
 
-if (matches.length > 0) {
+if (uniqueMatches.length > 0) {
   console.log(
-    JSON.stringify(matches[0], null, 2)
+    JSON.stringify(uniqueMatches[0], null, 2)
   );
 }
-const context = matches
-  .slice(0, 2)
+
+const priorityFiles = [
+  'readme.md',
+  'package.json',
+  'app.module.ts',
+  'main.ts',
+];
+
+uniqueMatches.sort((a, b) => {
+
+  const pathA =
+    ((a.payload as any)?.path ?? '')
+      .toLowerCase();
+
+  const pathB =
+    ((b.payload as any)?.path ?? '')
+      .toLowerCase();
+
+  const aPriority =
+    priorityFiles.some(
+      p => pathA.includes(p),
+    );
+
+  const bPriority =
+    priorityFiles.some(
+      p => pathB.includes(p),
+    );
+
+  if (aPriority && !bPriority)
+    return -1;
+
+  if (!aPriority && bPriority)
+    return 1;
+
+  return (b.score ?? 0) -
+         (a.score ?? 0);
+});
+
+const context = uniqueMatches
+  .slice(0, 8)
   .map((m) => {
     const p = m.payload as any;
 
@@ -265,6 +411,8 @@ ${(p.content ?? '').slice(0, 2000)}
 `;
   })
   .join('\n\n---\n\n');
+
+  
 
   const messages = [
     {
@@ -330,13 +478,10 @@ ${context ?? 'Sin contexto disponible.'}
 
 
 console.log(
-  'PROMPT:',
-  JSON.stringify(
-    messages,
-    null,
-    2,
-  ),
+  'PROMPT SIZE:',
+  JSON.stringify(messages).length,
 );
+
 
   const response = await this.foundryProvider.generateResponse(messages);
 

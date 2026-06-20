@@ -21,6 +21,52 @@ export class QdrantService implements OnModuleInit {
 
   }
 
+ async getImportantFiles(
+  owner: string,
+  repo: string,
+) {
+  const result = await this.client.scroll(
+    'repository_chunks',
+    {
+      limit: 50,
+      with_payload: true,
+      filter: {
+        must: [
+          {
+            key: 'owner',
+            match: {
+              value: owner,
+            },
+          },
+          {
+            key: 'repository',
+            match: {
+              value: repo,
+            },
+          },
+        ],
+      },
+    },
+  );
+
+  return result.points.filter((point) => {
+    const path =
+      ((point.payload as any)?.path ?? '')
+        .toLowerCase();
+
+    return [
+      'readme.md',
+      'package.json',
+      'app.module.ts',
+      'main.ts',
+      'docker-compose.yml',
+      '.env.example',
+    ].some(file =>
+      path.includes(file.toLowerCase()),
+    );
+  });
+}
+
   async onModuleInit() {
     const apiKey = await this.keyVault.getSecret('QDRANTAPIKEY');
   
