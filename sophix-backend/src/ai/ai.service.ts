@@ -164,6 +164,47 @@ ${p.content?.slice(0, 2000)}
       .join('\n\n---\n\n');
   }
 
+
+  else if (
+  githubUsername &&
+  this.isRepositoryKnowledgeQuestion(
+    lastUserMessage.content,
+  )
+) {
+
+  console.log(
+    'BUSCANDO EN TODOS LOS REPOSITORIOS'
+  );
+
+  const embedding =
+    await this.embeddingsService.createEmbedding(
+      lastUserMessage.content,
+      'retrieval.query',
+    );
+
+  const matches =
+    await this.qdrantService.searchByOwner(
+      githubUsername,
+      embedding,
+    );
+
+  repositoryContext = matches
+    .slice(0, 10)
+    .map((m) => {
+
+      const p = m.payload as any;
+
+      return `
+REPOSITORY: ${p.repository}
+FILE: ${p.path}
+
+CODE:
+${(p.content ?? '').slice(0, 2000)}
+`;
+    })
+    .join('\n\n---\n\n');
+}
+
  
   const systemPrompt = `
 Eres Sophix IA, un asistente especializado en análisis de código fuente, arquitectura de software y comprensión de repositorios.
@@ -245,6 +286,15 @@ console.log('PROMPT SIZE:', promptSize);
 console.log('HISTORY SIZE:', recentHistory.length);
 console.log('REPOSITORY CONTEXT SIZE:', repositoryContext?.length ?? 0);
   return await provider.generateResponse(messages);
+}
+
+private isRepositoryKnowledgeQuestion(
+  question: string,
+): boolean {
+
+  return /repo|repositorio|repositorios|proyecto|proyectos|codigo|código|arquitectura|estructura|organizacion|organización|stack|tecnologia|tecnologías|framework|frameworks|backend|frontend|nestjs|react|java|spring|aplicacion|aplicación|sistema|sistemas|desarrollado|desarrollaste|construido|implementado|funciona|funcionamiento/i
+    .test(question);
+
 }
 
 

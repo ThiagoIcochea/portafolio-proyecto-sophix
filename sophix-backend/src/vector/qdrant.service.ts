@@ -281,4 +281,27 @@ async searchByOwnerAndRepository(
 
 }
 
+async searchByOwner(
+  owner: string,
+  embedding: number[],
+) {
+  return this.client.search(
+    'repository_chunks',
+    {
+      vector: embedding,
+      limit: 20,
+      filter: {
+        must: [
+          {
+            key: 'owner',
+            match: {
+              value: owner,
+            },
+          },
+        ],
+      },
+    },
+  );
+}
+
 }
