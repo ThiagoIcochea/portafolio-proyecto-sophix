@@ -1,239 +1,240 @@
+
 # Sophix AI - Asistente Inteligente para Repositorios GitHub (RAG + IA + Tiempo Real)
 
-Sophix AI es un sistema moderno de asistencia inteligente que permite analizar repositorios de GitHub, responder preguntas sobre código y mantener conversaciones contextualizadas usando **RAG (Retrieval-Augmented Generation)**, embeddings, búsqueda vectorial y modelos de IA.
+Sophix AI es un sistema avanzado de inteligencia artificial que permite analizar repositorios de GitHub, responder preguntas sobre código y mantener conversaciones contextuales usando arquitectura RAG (Retrieval-Augmented Generation), embeddings y búsqueda vectorial.
 
-El sistema combina un backend en **NestJS**, almacenamiento vectorial con **Qdrant Cloud**, generación de embeddings con **Jina AI**, y respuestas inteligentes mediante **Azure AI / Foundry**, además de soporte en tiempo real con **WebSockets**.
+El sistema está diseñado como una plataforma tipo “GitHub Copilot para repositorios propios”, combinando backend, frontend móvil, automatización con n8n y múltiples modelos de IA.
 
 ---
 
-# Arquitectura del Proyecto
+# Arquitectura del Sistema
 
-## Backend
+##  sophix-backend (NestJS)
 
-```text
-sophix-backend/
-├── src/
-│
+src/
 ├── ai/
-│   ├── ai.service.ts                  # Motor principal RAG + generación de respuestas
+│   ├── ai.service.ts
 │   ├── providers/
-│   │   └── foundry.provider.ts        # Cliente Azure OpenAI / Foundry
+│   │   ├── foundry.provider.ts
+│   │   ├── groq.provider.ts
+│   │  
 │
 ├── auth/
-│   └── github OAuth + JWT
-│
 ├── chat/
-│   ├── chat.gateway.ts               # WebSockets (tiempo real)
-│   ├── chat.service.ts               # Lógica de chat
-│   └── chat.module.ts
-│
 ├── conversations/
-│   └── gestión de conversaciones
-│
 ├── messages/
-│   └── almacenamiento de mensajes
-│
 ├── github/
-│   ├── github.service.ts             # Integración con GitHub API
-│   ├── repository-indexer.service.ts # Chunking + indexación
-│   ├── embeddings.service.ts        # Generación de embeddings
-│   └── github.controller.ts
-│
 ├── vector/
-│   └── qdrant.service.ts             # Vector DB (Qdrant Cloud)
-│
 ├── key-vault/
-│   └── key-vault.service.ts         # Azure Key Vault (secrets)
-│
 ├── app.module.ts
-├── main.ts
-
-```
+└── main.ts
 
 ---
 
-# Arquitectura General del Sistema
+##  sophix-mobile (React Native - Expo)
 
-## Flujo RAG (Retrieval-Augmented Generation)
-
-1. Usuario envía pregunta sobre un repositorio GitHub.
-2. Se detecta el repositorio desde el mensaje.
-3. Se genera embedding con **Jina AI / embeddings service**.
-4. Se busca similitud en **Qdrant Cloud**.
-5. Se recuperan chunks relevantes del código.
-6. Se construye contexto.
-7. Se envía al modelo de IA (Azure Foundry).
-8. Se genera respuesta final.
-
----
-
-# Tecnologías Utilizadas
-
-## Backend Core
-
-* NestJS
-* TypeScript
-* Node.js
-
-## Inteligencia Artificial
-
-* Azure OpenAI / Foundry
-* Jina AI Embeddings
-* RAG (Retrieval-Augmented Generation)
-
-## Base de Datos
-
-* PostgreSQL (Neon)
-* TypeORM
-
-## Vector Database
-
-* Qdrant Cloud (búsqueda semántica)
-
-## Integraciones
-
-* GitHub API (repositorios y análisis de código)
-* Azure Key Vault (gestión de secretos)
-
-## Tiempo Real
-
-* WebSockets (NestJS Gateway)
+app/
+├── screens/
+│   ├── HomeScreen.tsx
+│   ├── ChatScreen.tsx
+│   ├── RepoScreen.tsx
+│   ├── LoginScreen.tsx
+│
+├── components/
+│   ├── MessageBubble.tsx
+│   ├── TypingIndicator.tsx
+│   ├── RepoCard.tsx
+│
+├── services/
+│   ├── api.ts
+│   ├── websocket.ts
+│
+├── store/
+├── hooks/
+└── navigation/
 
 ---
 
-# Funcionalidades Principales
+#  Automatización con n8n (CI/CD Inteligente)
 
-## 📁 Análisis de Repositorios
+Sophix AI utiliza n8n como motor de automatización para reindexación automática.
 
-* Indexación automática de repositorios GitHub
-* Chunking de código fuente
-* Generación de embeddings
-* Almacenamiento en base vectorial
+Flujo:
 
----
-
-## 🧠 IA con Contexto (RAG)
-
-* Preguntas sobre repositorios específicos
-* Respuestas basadas en código real
-* Evita alucinaciones (no inventa archivos)
-* Contexto dinámico por conversación
-
----
-
-## 🔎 Búsqueda Semántica
-
-* Búsqueda por similitud en Qdrant
-* Filtrado por repositorio / owner
-* Ranking por score de relevancia
-
----
-
-## 💬 Chat Inteligente
-
-* Conversaciones persistentes
-* Contexto histórico
-* Integración con IA
-
----
-
-## ⚡ Tiempo Real (WebSockets)
-
-* Mensajes en vivo
-* Indicador de escritura
-* Salas por conversación
-* Experiencia tipo chat moderno
-
----
-
-## 🔐 Seguridad
-
-* JWT Authentication
-* GitHub OAuth
-* Secrets en Azure Key Vault
-
----
-
-
-
-# Instalación
-
-```bash
-npm install
-```
-
----
-
-# Ejecución
-
-```bash
-npm run start:dev
-```
-
----
-
-# Flujo de Indexación
-
-```text
-GitHub Repo
-   ↓
-Chunking (RepositoryIndexerService)
-   ↓
+GitHub Push Event
+↓
+Webhook en n8n
+↓
+Trigger de reindexación
+↓
+Chunking de código fuente
+↓
 Embeddings (Jina AI)
-   ↓
-Qdrant Cloud (Vector DB)
-   ↓
-Búsqueda semántica
-```
+↓
+Actualización en Qdrant
 
 ---
 
-# Flujo de Chat con RAG
+#  Arquitectura RAG
 
-```text
 Usuario pregunta
-   ↓
-Detecta repo
-   ↓
-Embedding pregunta
-   ↓
-Qdrant search
-   ↓
+↓
+Detección de repositorio GitHub
+↓
+Embedding (Jina AI)
+↓
+Búsqueda en Qdrant
+↓
+Recuperación de código
+↓
 Construcción de contexto
-   ↓
-Azure Foundry (IA)
-   ↓
+↓
+Selección de modelo IA
+↓
 Respuesta final
-```
 
 ---
 
-# WebSockets (Chat en Tiempo Real)
+#  Modelos de IA Soportados
 
-Eventos principales:
-
-* connected
-* joinConversation
-* typing
-* message
-* messageReceived
+| Modelo | Uso | Características |
+|--------|-----|----------------|
+| gpt-4o-mini | Chat general | Balance entre velocidad y calidad |
+| gpt-mini | Respuestas rápidas | Bajo costo y alta velocidad |
+| llama-3.3-70b-versatile | Análisis profundo | Mejor para código complejo |
 
 ---
 
-# Estado del Proyecto
+#  Backend - Tecnologías
 
-✔ RAG implementado
-✔ Embeddings funcionales (Jina AI)
-✔ Vector DB (Qdrant Cloud)
-✔ Indexación de repositorios
-✔ Chat con contexto
-✔ Azure Key Vault integrado
-✔ WebSockets básico funcionando
+- NestJS
+- TypeScript
+- PostgreSQL (Neon)
+- Qdrant Cloud (Vector DB)
+- Jina AI (Embeddings)
+- GitHub API
+- Azure Key Vault
+- WebSockets
+- n8n (automatización de reindexación)
 
 ---
 
-# Autor
+#  Frontend - Tecnologías
 
-**Thiago Paolo Icochea Rodriguez**
+- React Native (Expo)
+- TypeScript
+- Axios
+- Socket.io-client
+- React Navigation
+- Zustand (opcional)
 
-Proyecto enfocado en demostrar arquitectura moderna de IA aplicada a código, búsqueda semántica y sistemas de chat inteligentes.
+---
+
+#  Instalación
+
+Backend:
+npm install
+npm run start:dev
+
+Frontend:
+npm install
+npx expo start
+
+---
+
+#  Ejecutar en Android
+
+npx expo run:android
+
+---
+
+#  Funcionalidades Principales
+
+ GitHub Analyzer
+- Detección automática de repositorios
+- Indexación de código fuente
+- Reindexación automática con n8n
+
+Chat Inteligente (RAG)
+- Respuestas basadas en código real
+- Evita alucinaciones
+- Contexto por conversación
+- Multi-modelo IA
+
+Búsqueda Semántica
+- Qdrant vector search
+- Filtrado por repo/usuario
+- Ranking por relevancia
+
+ Tiempo Real
+- WebSockets
+- Chat instantáneo
+- Typing indicator
+
+ Seguridad
+- JWT Authentication
+- GitHub OAuth
+- Azure Key Vault
+
+---
+
+#  API
+
+POST /ai/chat  
+POST /ai/repository-chat  
+GET /auth/github/callback  
+
+---
+
+#  Flujo de Indexación
+
+GitHub Repository
+↓
+n8n Webhook (push event)
+↓
+Chunking
+↓
+Embeddings (Jina AI)
+↓
+Qdrant Vector DB
+↓
+Búsqueda semántica
+
+---
+
+#  Flujo de Chat
+
+Usuario
+↓
+Detección de repo
+↓
+Embedding query
+↓
+Qdrant Search
+↓
+Contexto
+↓
+IA (modelo seleccionado)
+↓
+Respuesta final
+
+---
+
+#  Estado del Proyecto
+
+✔ RAG funcional  
+✔ Qdrant integrado  
+✔ Embeddings activos  
+✔ Chat en tiempo real  
+✔ Multi-modelo IA  
+✔ GitHub indexing automático  
+✔ Pipeline n8n funcionando  
+✔ Frontend móvil operativo  
+
+---
+
+#  Autor
+
+Thiago Paolo Icochea Rodríguez
+
+Sistema diseñado para demostrar arquitectura moderna de IA aplicada a código, búsqueda semántica, automatización con n8n y chat inteligente multi-modelo.

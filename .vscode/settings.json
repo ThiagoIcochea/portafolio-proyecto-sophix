@@ -1,4 +1,16 @@
 {
     "appService.defaultWebAppToDeploy": "/subscriptions/b720966c-f4c7-4913-84b3-276cfcd359f0/resourceGroups/rg-sophix/providers/Microsoft.Web/sites/sophix-backend",
-    "appService.deploySubpath": "sophix-backend"
+    "appService.deploySubpath": "sophix-backend",
+    "eslint.workingDirectories": [
+        {
+            "directory": "sophix-mobile",
+            "changeProcessCWD": true
+        },
+        {
+            "directory": "sophix-backend",
+            "changeProcessCWD": true
+        }
+    ],
+    "typescript.tsdk": "sophix-mobile/node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true
 }
