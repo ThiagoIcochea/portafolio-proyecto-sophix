@@ -7,9 +7,10 @@ import { GithubModule } from '../github/github.module';
 import { VectorModule } from '../vector/vector.module';
 import { KeyVaultModule } from 'src/key-vault/key-vault.module';
 import { GroqProvider } from './providers/GroqProvider';
+import { ConversationsModule } from 'src/conversations/conversations.module';
 
 @Module({
-  imports: [MessagesModule, GithubModule, VectorModule, KeyVaultModule],
+  imports: [MessagesModule, GithubModule, VectorModule, KeyVaultModule, ConversationsModule],
   providers: [AiService, FoundryProvider,  GroqProvider],
   exports: [AiService],
   controllers: [AiController],
