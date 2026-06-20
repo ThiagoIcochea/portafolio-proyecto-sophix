@@ -23,7 +23,7 @@ export class GroqProvider implements OnModuleInit {
 
   async generateResponse(messages: any[]): Promise<string> {
     const completion = await this.client.chat.completions.create({
-      model: this.configService.get<string>('GROQMODEL') || '',
+      model: this.configService.get<string>('GROQMODEL') ?? 'llama-3.3-70b-versatile',
       messages,
       temperature: 0.2,
     });
